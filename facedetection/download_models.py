@@ -9,7 +9,6 @@ urls = {
     "gender_deploy.prototxt": "https://raw.githubusercontent.com/Isfhan/age-gender-detection/master/gender_deploy.prototxt",
     "gender_net.caffemodel": "https://raw.githubusercontent.com/Isfhan/age-gender-detection/master/gender_net.caffemodel"
 }
-
 for fname, url in urls.items():
     print(f"Downloading {fname} …")
     urllib.request.urlretrieve(url, fname)

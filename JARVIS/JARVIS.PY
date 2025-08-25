@@ -90,7 +90,7 @@ def process_command(command):
     elif "lock" in command:
         os.system("rundll32.exe user32.dll,LockWorkStation")
 
-    # Volume Controls
+ 
     elif "volume up" in command:
         os.system("nircmd setsysvolume 65535")
         speak("Volume increased")

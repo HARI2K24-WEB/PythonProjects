@@ -11,12 +11,10 @@ screen_w, screen_h = pyautogui.size()
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 mp_draw = mp.solutions.drawing_utils
-
 # Queue to smooth mouse movement
 smooth_buffer = deque(maxlen=5)  # keep last 5 points
 
 cap = cv2.VideoCapture(0)
-
 while True:
     ret, frame = cap.read()
     if not ret:

@@ -3,7 +3,7 @@ import cv2
 
 cap = cv2.VideoCapture(0)
 
-# First frame (for comparison)
+
 first_frame = None
 
 while True:
@@ -11,17 +11,14 @@ while True:
     if not ret:
         break
 
-    # Resize for speed + convert to grayscale
     frame = cv2.resize(frame, (640, 480))
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-    # Save first frame as baseline
+
     if first_frame is None:
         first_frame = gray
         continue
-
-    # Calculate difference between current and first frame
     frame_delta = cv2.absdiff(first_frame, gray)
     thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
 

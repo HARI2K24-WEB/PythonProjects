@@ -50,7 +50,6 @@ class CircleAccumulator:
             if da > 180: da -= 360
             if da < -180: da += 360
             self.total_angle += da
-
     def consume_steps(self, step_deg=300):
         steps = int(self.total_angle // step_deg)
         if steps != 0:

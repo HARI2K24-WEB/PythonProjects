@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import argparse
 from collections import deque
-
 def parse_args():
     p = argparse.ArgumentParser(description="Real-time Invisible Cloak using OpenCV")
     p.add_argument("--camera", type=int, default=0, help="Camera index (default: 0)")
