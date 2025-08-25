@@ -1,6 +1,6 @@
 import cv2
 
-# Start video capture
+
 cap = cv2.VideoCapture(0)
 
 # First frame (for comparison)
