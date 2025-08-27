@@ -5,8 +5,6 @@ mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
 
 hands = mp_hands.Hands(max_num_hands=2, min_detection_confidence=0.7)
-
-
 # Finger tip landmark IDs
 finger_tips = [4, 8, 12, 16, 20]
 

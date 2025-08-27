@@ -12,7 +12,6 @@ def parse_args():
     p.add_argument("--warmup-frames", type=int, default=60, help="Frames to build background")
     p.add_argument("--denoise", action="store_true", help="Extra denoising for noisy lighting")
     return p.parse_args()
-
 def get_hsv_ranges(color):
     """
     Returns list of (lower, upper) HSV tuples for the chosen color.
