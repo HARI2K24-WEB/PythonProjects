@@ -1,0 +1,8 @@
+sounddevice
+soundfile
+numpy
+speechrecognition
+pydub
+deep-translator
+# Optional: faster/better local transcription
+# whisper

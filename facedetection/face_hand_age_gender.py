@@ -1,14 +1,31 @@
 import cv2
 import numpy as np
 import mediapipe as mp
+import os
 
-# Load models
-FACE_PROTO = "deploy.prototxt"
-FACE_MODEL = "res10_300x300_ssd_iter_140000.caffemodel"
-AGE_PROTO = "age_deploy.prototxt"
-AGE_MODEL = "age_net.caffemodel"
-GENDER_PROTO = "gender_deploy.prototxt"
-GENDER_MODEL = "gender_net.caffemodel"
+# Base directory for model files (script directory)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Load models (use absolute paths)
+FACE_PROTO = os.path.join(BASE_DIR, "deploy.prototxt")
+FACE_MODEL = os.path.join(BASE_DIR, "res10_300x300_ssd_iter_140000.caffemodel")
+AGE_PROTO = os.path.join(BASE_DIR, "age_deploy.prototxt")
+AGE_MODEL = os.path.join(BASE_DIR, "age_net.caffemodel")
+GENDER_PROTO = os.path.join(BASE_DIR, "gender_deploy.prototxt")
+GENDER_MODEL = os.path.join(BASE_DIR, "gender_net.caffemodel")
+
+# Verify model files exist before loading
+missing = []
+for f in [FACE_PROTO, FACE_MODEL, AGE_PROTO, AGE_MODEL, GENDER_PROTO, GENDER_MODEL]:
+    if not os.path.isfile(f):
+        missing.append(f)
+
+if missing:
+    print("ERROR: The following model files are missing:")
+    for m in missing:
+        print(" -", m)
+    print("\nPlease run 'download_models.py' in this folder or place the model files here.")
+    raise SystemExit(1)
 
 # Load DNNs
 face_net = cv2.dnn.readNetFromCaffe(FACE_PROTO, FACE_MODEL)
@@ -31,6 +48,9 @@ hands = mp_hands.Hands(
 
 # Start camera
 cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    print("ERROR: Could not open video capture (camera). Check camera index or permissions.")
+    raise SystemExit(1)
 
 while True:
     ret, frame = cap.read()
