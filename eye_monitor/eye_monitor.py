@@ -1,6 +1,11 @@
 import cv2
 import os
-import mediapipe as mp
+try:
+    import mediapipe as mp
+    HAVE_MEDIAPIPE = True
+except Exception:
+    mp = None
+    HAVE_MEDIAPIPE = False
 import time
 import numpy as np
 import platform
@@ -9,12 +14,19 @@ import argparse
 from ctypes import wintypes
 import threading
 
-# MediaPipe face mesh
-mp_face_mesh = mp.solutions.face_mesh
+# MediaPipe face mesh (only set if mediapipe imported successfully)
+mp_face_mesh = None
+if HAVE_MEDIAPIPE:
+    try:
+        mp_face_mesh = mp.solutions.face_mesh
+    except Exception:
+        # if anything goes wrong accessing solutions, disable MediaPipe usage
+        mp_face_mesh = None
+        HAVE_MEDIAPIPE = False
 
 # Eye landmarks indices for MediaPipe Face Mesh (approximate)
 # Using left/right eye outer and inner points to compute simple openness metric
-LEFT_EYE_IDX = [33, 133, 159, 145]  # left eye: outer, inner, top, bottom
+LEFT_EYE_IDX = [33, 133, 159, 145]  # left eye: outer, inner, top, bottom (for MediaPipe)
 RIGHT_EYE_IDX = [362, 263, 386, 374]
 
 # Thresholds
@@ -55,6 +67,14 @@ def eye_openness_ratio(landmarks, image_w, image_h, idxs):
     if horiz == 0:
         return 0.0
     return vert / horiz
+
+
+def haar_eye_openness(eye_rect):
+    """Compute a simple openness metric from an eye rectangle (x,y,w,h): use h/w."""
+    x, y, w, h = eye_rect
+    if w == 0:
+        return 0.0
+    return float(h) / float(w)
 
 
 # Fullscreen blank overlay (safe alternative to powering off monitor)
@@ -145,26 +165,52 @@ def main(args):
     closed_since = None
     monitor_off = False
 
-    with mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5) as face_mesh:
+    # Choose method: MediaPipe (preferred) if available, otherwise Haar cascades
+    if HAVE_MEDIAPIPE:
+        face_mesh = mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5)
+    else:
+        # load Haar cascades for face + eyes
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        if face_cascade.empty():
+            print('Warning: failed to load face Haar cascade; face detection may not work')
+        if eye_cascade.empty():
+            print('Warning: failed to load eye Haar cascade; eye detection may not work')
+
+    try:
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
             h, w = frame.shape[:2]
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = face_mesh.process(rgb)
             eye_open = False
-            if results.multi_face_landmarks:
-                for lm in results.multi_face_landmarks:
-                    lmks = lm.landmark
-                    left_ratio = eye_openness_ratio(lmks, w, h, LEFT_EYE_IDX)
-                    right_ratio = eye_openness_ratio(lmks, w, h, RIGHT_EYE_IDX)
-                    # use avg
-                    ratio = (left_ratio + right_ratio) / 2.0
-                    cv2.putText(frame, f"Eye ratio: {ratio:.2f}", (30,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
-                    if ratio > EYE_CLOSED_THRESHOLD:
-                        eye_open = True
-                    break
+            if HAVE_MEDIAPIPE and mp_face_mesh is not None:
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                results = face_mesh.process(rgb)
+                if results is not None and getattr(results, 'multi_face_landmarks', None):
+                    for lm in results.multi_face_landmarks:
+                        lmks = lm.landmark
+                        left_ratio = eye_openness_ratio(lmks, w, h, LEFT_EYE_IDX)
+                        right_ratio = eye_openness_ratio(lmks, w, h, RIGHT_EYE_IDX)
+                        ratio = (left_ratio + right_ratio) / 2.0
+                        cv2.putText(frame, f"Eye ratio: {ratio:.2f}", (30,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
+                        if ratio > EYE_CLOSED_THRESHOLD:
+                            eye_open = True
+                        break
+            else:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(100,100))
+                if len(faces) > 0:
+                    x,y,fw,fh = faces[0]
+                    roi = gray[y:y+fh, x:x+fw]
+                    eyes = eye_cascade.detectMultiScale(roi)
+                    if len(eyes) > 0:
+                        # take first detected eye rect and compute openness
+                        ex,ey,ew,eh = eyes[0]
+                        ratio = haar_eye_openness((ex,ey,ew,eh))
+                        cv2.putText(frame, f"Eye ratio(haar): {ratio:.2f}", (30,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
+                        if ratio > EYE_CLOSED_THRESHOLD:
+                            eye_open = True
 
             if eye_open:
                 closed_since = None
@@ -198,8 +244,15 @@ def main(args):
                 if key == ord('q'):
                     break
 
-    cap.release()
-    cv2.destroyAllWindows()
+    finally:
+        # cleanup MediaPipe resources if used
+        try:
+            if HAVE_MEDIAPIPE and 'face_mesh' in locals():
+                face_mesh.close()
+        except Exception:
+            pass
+        cap.release()
+        cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':

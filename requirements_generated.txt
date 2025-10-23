@@ -1,0 +1,30 @@
+# Generated requirements inferred from imports in repository
+# Review and adjust versions as needed. Some packages (mediapipe, deepface) may require
+# older Python versions or system dependencies and might fail to install on Python 3.13.
+
+opencv-python
+numpy
+pyautogui
+mediapipe
+sounddevice
+matplotlib
+scipy
+soundfile
+SpeechRecognition
+deep-translator
+deepface
+pygame
+pyttsx3
+vosk
+psutil
+pyscreenshot
+pyperclip
+keyboard
+Pillow
+scikit-learn
+torch
+tensorflow
+requests
+
+# Optional / OS-specific
+pywin32
