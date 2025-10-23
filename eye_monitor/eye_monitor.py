@@ -13,8 +13,6 @@ import ctypes
 import argparse
 from ctypes import wintypes
 import threading
-
-# MediaPipe face mesh (only set if mediapipe imported successfully)
 mp_face_mesh = None
 if HAVE_MEDIAPIPE:
     try:
