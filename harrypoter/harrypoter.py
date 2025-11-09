@@ -19,7 +19,6 @@ def get_hsv_ranges(color):
     You may tweak if your lights or fabric differ.
     """
     if color == "red":
-        # Red wraps around 0°, so we use two ranges.
         ranges = [
             (np.array([0, 120, 70]),   np.array([10, 255, 255])),
             (np.array([170, 120, 70]), np.array([180, 255, 255]))
