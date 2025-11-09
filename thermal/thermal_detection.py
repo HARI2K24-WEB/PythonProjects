@@ -1,7 +1,6 @@
 import cv2
 
 def thermal_camera():
-    # Start webcam
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open camera.")
